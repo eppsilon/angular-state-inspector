@@ -18,7 +18,8 @@ if (elementsPanel) {
 // The function below is executed in the context of the inspected page.
 function getPanelContents() {
   if (!$0) return;
-  const ng = window.ng;
+  const _window = $0.ownerDocument.defaultView;
+  const ng = _window.ng;
   let isAngular = false;
   let isAngularJs = false;
   let isAngularIvy = false;
@@ -47,7 +48,7 @@ function getPanelContents() {
         _panelContent = getAngularIvyContent();
         isAngularIvy = true;
       } else if (isAngularJsContext()) { // AngularJs
-        _panelContent = getAngularJsContent(window.angular);
+        _panelContent = getAngularJsContent($0.ownerDocument.defaultView.angular);
         isAngularJs = true;
       }
     } catch {
@@ -77,20 +78,20 @@ function getPanelContents() {
   /** @returns {boolean} */
   function isAngularJsContext() {
     try {
-      return !!window.angular.element($0).scope()
+      return !!$0.ownerDocument.defaultView.angular.element($0).scope()
     } catch {
       return false;
     }
   }
 
   function parseNgMajorVersion() {
-    if (window.getAllAngularRootElements) {
+    if ($0.ownerDocument.defaultView.getAllAngularRootElements) {
       const rootElements = getAllAngularRootElements();
       if (rootElements && rootElements[0]) {
         const versionString = rootElements[0].getAttribute('ng-version');
         return versionString.split('.')[0];
       }
-    } else if (window.angular) {
+    } else if ($0.ownerDocument.defaultView.angular) {
       return 1;
     }
   }
@@ -166,7 +167,7 @@ function getPanelContents() {
               updateComponentState(state);
             });
           }
-        } else if (isAngularJs && window.angular) {
+        } else if (isAngularJs && _window.angular) {
           updateComponentState(state);
           angular.element($0).scope().$applyAsync();
         } else {
@@ -214,40 +215,40 @@ function getPanelContents() {
 
   /** @returns {State} */
   function stateRef() {
-    return window.__ngState__;
+    return _window.__ngState__;
   }
 
   /** Updates state reference. */
   function updateState(state) {
-    window.__ngState__ = state;
+    _window.__ngState__ = state;
   }
 
   /** Adds shortcuts to window object and prints help message to console. */
   function exportToWindow() {
     updateState(state);
 
-    if (isAngularJs && !window.$ctrl) {
-      Object.defineProperty(window, '$ctrl', {
+    if (isAngularJs && !_window.$ctrl) {
+      Object.defineProperty(_window, '$ctrl', {
         get() {
           return findCtrl(stateRef().originalState);
         }
       })
     }
 
-    if (!window.$applyChanges) {
-      window.$apply = window.$detectChanges = window.$applyChanges = getDetectChangesFunc();
+    if (!_window.$applyChanges) {
+      _window.$apply = _window.$detectChanges = _window.$applyChanges = getDetectChangesFunc();
     }
 
-    if (!window.$state) {
+    if (!_window.$state) {
       ['$state', '$scope', '$context'].forEach(method =>
-        Object.defineProperty(window, method, {
+        Object.defineProperty(_window, method, {
           get() {
             return stateRef().originalState;
           }
         }));
     }
 
-    if (window.__shortcutsShown__) return;
+    if (_window.__shortcutsShown__) return;
     console.log('\n\n');
     console.log('%cAngular state inspector shortcuts:', 'color: #ff5252; font-weight: bold;');
     if (isAngularJs) {
@@ -259,7 +260,7 @@ function getPanelContents() {
       'color: #ff5252', 'color: #1976d2'
     );
     console.log('\n\n');
-    window.__shortcutsShown__ = true;
+    _window.__shortcutsShown__ = true;
   }
 
   function clone(object) {
